@@ -1,0 +1,48 @@
+# r0 ← a[0]
+PUSH 100
+LOAD
+POP 0
+
+# r1 ← n
+PUSH 200
+LOAD
+POP 1
+
+# i = 1
+PUSH 1
+
+loop_start:
+DUP             ; duplicate i
+PUSH r1         ; push n
+LT              ; i < n?
+JZ end_loop     ; exit loop if not
+POP             ; remove LT result
+
+# compute address a + i, load a[i]
+DUP             ; i
+PUSH 100
+ADD             ; a + i
+LOAD            ; a[i]
+DUP             ; copy a[i]
+PUSH r0         ; current max
+GT              ; a[i] > max?
+JZ skip_update
+
+POP             ; remove GT result
+POP 0           ; r0 ← a[i]
+JMP after_cmp
+
+skip_update:
+POP             ; remove GT result
+POP             ; remove a[i] copy
+
+after_cmp:
+POP             ; remove old i
+PUSH 1
+ADD             ; i++
+PUSH r1         ; re-push n
+JMP loop_start
+
+end_loop:
+PUSH r0         ; result
+RET
