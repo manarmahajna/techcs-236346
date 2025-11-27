@@ -17,7 +17,7 @@ This project takes you on a journey from basic adders to a complete, formally ve
 
 ---
 
-## 📊 **Current Progress: 5/7 Phases Complete** ✅
+## 📊 **Current Progress: 7/7 Phases Complete** ✅
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -26,8 +26,8 @@ This project takes you on a journey from basic adders to a complete, formally ve
 | 3. CPU & Assembly | ✅ **Complete** | Stack machine + programs |
 | 4. Software Stack | ✅ **Complete** | Bootloader + stdlib + ISA verification |
 | 5. Loop Verification | ✅ **Complete** | Tail calls + program verification + keyboard |
-| 6. Advanced Verification | ⬜ Upcoming | Complex program properties |
-| 7. Snake Game | ⬜ Final | Complete system + verification |
+| 6. Advanced Verification | ✅ **Complete**  | Complex program properties |
+| 7. Snake Game | ✅ **Complete**  | Complete system + verification |
 
 ---
 
@@ -194,45 +194,8 @@ project/
 
 ---
 
-## 🎓 **Learning Outcomes**
 
-By completing this project, you'll learn:
 
-### Hardware Design
-- Digital logic design with PyRTL
-- Sequential vs. combinational circuits
-- CPU architecture and ISA design
-- Memory-mapped I/O
-
-### Formal Verification
-- SMT solving with Z3
-- Transition systems
-- Loop invariants
-- CHC (Constrained Horn Clauses)
-- Pre/postconditions
-
-### Systems Programming
-- Assembly language programming
-- Stack-based execution
-- Memory management
-- Peripheral interfacing
-
-### Software Engineering
-- Test-driven development
-- Comprehensive documentation
-- Performance benchmarking
-- Code organization
-
----
-
-## 📈 **Statistics**
-
-- **Code**: ~5000+ lines across 15 modules
-- **Documentation**: ~80 pages
-- **Tests**: 28 test cases
-- **Verification Time**: Sub-second to ~60s (depending on circuit size)
-- **Success Rate**: 100% (all tests passing)
-- **Formal Specs**: 12+ instructions with FOL specifications
 
 ---
 
@@ -262,19 +225,6 @@ By completing this project, you'll learn:
 
 ---
 
-## 🎯 **Next Steps**
-
-### For Users
-1. Explore the [GETTING_STARTED.md](GETTING_STARTED.md)
-2. Run verification examples
-3. Try writing your own assembly programs
-4. Experiment with verification
-
-### For Development (Phase 4)
-1. Implement calculator program
-2. Design bootloader
-3. Create memory allocator
-4. Run on C/Verilog simulation
 
 ---
 
@@ -290,38 +240,6 @@ By completing this project, you'll learn:
 - **PyRTL Documentation**: https://pyrtl.readthedocs.io/
 - **Z3 Guide**: https://microsoft.github.io/z3guide/
 - **CHCs in Z3**: https://microsoft.github.io/z3guide/programming/Fixedpoints
-
----
-
-## 🤝 **Contributing**
-
-This is an educational project. Feel free to:
-- Add more test cases
-- Write additional assembly programs
-- Improve documentation
-- Optimize verification
-- Add new features
-
----
-
-## 📧 **Contact**
-
-**Course**: 236346 - Hardware and Software Verification  
-**Institution**: Technion
-
----
-
-## ⭐ **Acknowledgments**
-
-- Inspired by **Nand2Tetris** project
-- Based on Technion course materials
-- Uses **PyRTL** and **Z3** frameworks
-
----
-
-**Status**: 5/7 Phases Complete ✅  
-**Last Updated**: November 27, 2025  
-**Ready For**: Phase 6-7 - Snake Game Development & Final Verification
 
 ---
 
