@@ -1,0 +1,162 @@
+/* Standard Library for StaML
+ * Built-in functions for memory access and I/O
+ */
+
+/* Memory Operations */
+
+// mem_poke: Store word at memory address
+// mem_poke(addr, value) -> 0
+mem_poke(2) = 
+    $1;     // Push value
+    $0;     // Push address  
+    STOR;   // Store value at address
+    0       // Return 0
+
+// mem_peek: Read word from memory address
+// mem_peek(addr) -> value
+mem_peek(1) =
+    $0;     // Push address
+    LOAD    // Load and return value
+
+/* GPIO Operations */
+
+// GPIO addresses
+GPIO_IN_LO = 0xc000
+GPIO_IN_HI = 0xc001
+GPIO_OUT_LO = 0xc002
+GPIO_OUT_HI = 0xc003
+
+// wait: Wait for GPIO input
+// Returns the value from GPIO_IN_LO when GPIO_IN_HI becomes non-zero
+wait(0) = 
+    mem_peek GPIO_IN_HI;
+    wait_aux
+
+wait_aux(1) =
+    if (mem_peek GPIO_IN_HI) - $0
+    then mem_peek GPIO_IN_LO
+    else wait_aux $0
+
+// gpio_read: Read 32-bit value from GPIO
+// Returns low 16 bits (can extend for full 32-bit)
+gpio_read(0) =
+    mem_peek GPIO_IN_LO
+
+// gpio_write: Write 16-bit value to GPIO output
+gpio_write(1) =
+    mem_poke GPIO_OUT_LO $0
+
+/* Memory Set Operations */
+
+// memset: Set n words starting at addr to value
+// memset(addr, n, value) -> 0
+memset(3) =
+    if 0 < $1 then
+        mem_poke $0 $2;
+        memset ($0 + 1) ($1 - 1) $2
+    else 0
+
+// memset_skip: Set n words with stride
+// memset_skip(start, stride, count, value) -> 0
+memset_skip(4) =
+    if 0 < $1 then
+        mem_poke $0 $3;
+        memset_skip ($0 + $2) ($1 - 1) $2 $3
+    else 0
+
+/* Video Operations */
+
+VIDEO_BASE = 0xa000
+
+// video_poke: Write to video memory at (x, y)
+// video_poke(x, y, value) -> 0
+video_poke(3) =
+    mem_poke (VIDEO_BASE + $1 * 16 + $0) $2
+
+// video_peek: Read from video memory at (x, y)
+video_peek(2) =
+    mem_peek (VIDEO_BASE + $1 * 16 + $0)
+
+// video_clear: Clear entire video memory
+video_clear(0) =
+    memset VIDEO_BASE 256 0
+
+/* Array Operations */
+
+// array_get: Get element from array
+// array_get(array_addr, index) -> value
+array_get(2) =
+    mem_peek ($0 + $1)
+
+// array_set: Set element in array
+// array_set(array_addr, index, value) -> 0
+array_set(3) =
+    mem_poke ($0 + $1) $2
+
+/* Utility Functions */
+
+// min: Return minimum of two values
+min(2) =
+    if $0 < $1 then $0 else $1
+
+// max: Return maximum of two values  
+max(2) =
+    if $0 < $1 then $1 else $0
+
+// abs: Absolute value
+abs(1) =
+    if $0 < 0 then 0 - $0 else $0
+
+// clamp: Clamp value between min and max
+clamp(3) =
+    max $0 (min $1 $2)
+
+/* String/Buffer Operations */
+
+// memcpy: Copy n words from src to dst
+// memcpy(dst, src, n) -> 0
+memcpy(3) =
+    if 0 < $2 then
+        mem_poke $0 (mem_peek $1);
+        memcpy ($0 + 1) ($1 + 1) ($2 - 1)
+    else 0
+
+// memcmp: Compare n words at two addresses
+// memcmp(addr1, addr2, n) -> 0 if equal, non-zero otherwise
+memcmp(3) =
+    if 0 < $2 then
+        if (mem_peek $0) - (mem_peek $1) then
+            1  // Not equal
+        else
+            memcmp ($0 + 1) ($1 + 1) ($2 - 1)
+    else 0  // Equal
+
+/* Math Operations */
+
+// mul: Multiply two numbers (using ALU)
+mul(2) = $0 * $1
+
+// div_mod: Integer division (simplified, assumes positive numbers)
+// Returns quotient
+div(2) =
+    if $0 < $1 then 0
+    else 1 + div ($0 - $1) $1
+
+// mod: Modulo operation
+mod(2) =
+    if $0 < $1 then $0
+    else mod ($0 - $1) $1
+
+/* Bitwise Helpers */
+
+// bit_test: Test if bit n is set in value
+bit_test(2) =
+    ($0 >> $1) & 1
+
+// bit_set: Set bit n in value
+bit_set(2) =
+    $0 | (1 << $1)
+
+// bit_clear: Clear bit n in value
+bit_clear(2) =
+    $0 & ~(1 << $1)

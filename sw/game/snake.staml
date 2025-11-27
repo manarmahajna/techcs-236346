@@ -1,0 +1,221 @@
+/* Snake Game - Complete Implementation
+ * A verified classic Snake game for StaM CPU
+ */
+
+/* ============================================
+ * Game State Memory Layout
+ * ============================================ */
+
+STATE_DIR = 0x1000        // Current direction
+STATE_FOOD_X = 0x1001     // Food X coordinate
+STATE_FOOD_Y = 0x1002     // Food Y coordinate
+STATE_SCORE = 0x1003      // Current score
+STATE_GAME_OVER = 0x1004  // Game over flag
+
+
+/* ============================================
+ * Game Initialization
+ * ============================================ */
+
+main(0) =
+    init_game();
+    .game_loop()
+
+init_game(0) =
+    // Initialize utilities
+    queue_init();
+    random_init 42;
+    init_apple_pattern();
+    clear_screen();
+    
+    // Initialize snake at center
+    queue_push 16 16;
+    queue_push 15 16;
+    queue_push 14 16;
+    
+    // Initial direction: RIGHT
+    mem_poke STATE_DIR DIR_RIGHT;
+    
+    // Spawn first food
+    let (fx, fy) = spawn_food() in
+    mem_poke STATE_FOOD_X fx;
+    mem_poke STATE_FOOD_Y fy;
+    
+    // Initial score
+    mem_poke STATE_SCORE 0;
+    mem_poke STATE_GAME_OVER 0;
+    
+    // Draw initial state
+    draw_snake();
+    draw_food();
+    0
+
+
+/* ============================================
+ * Main Game Loop (Tail Recursive!)
+ * ============================================ */
+
+game_loop(0) =
+    // Check if game over
+    if mem_peek STATE_GAME_OVER
+    then show_game_over()
+    else (
+        // Read input (non-blocking)
+        let key = try_read_key KEY_NONE in
+        
+        // Update direction
+        let old_dir = mem_peek STATE_DIR in
+        let new_dir = update_direction old_dir key in
+        mem_poke STATE_DIR new_dir;
+        
+        // Move snake
+        move_snake();
+        
+        // Small delay for game speed
+        delay 1000;
+        
+        // Continue game loop (tail call!)
+        .game_loop()
+    )
+
+
+/* ============================================
+ * Snake Movement
+ * ============================================ */
+
+move_snake(0) =
+    // Get current head position
+    let (head_x, head_y) = queue_get 0 in
+    
+    // Calculate new head position (wraps around automatically!)
+    let dir = mem_peek STATE_DIR in
+    let (new_x, new_y) = next_position head_x head_y dir in
+    
+    // Only check self collision (no walls with wrap-around!)
+    if collides_with_snake new_x new_y
+    then mem_poke STATE_GAME_OVER 1
+    else (
+            // Check if eating food
+            let food_x = mem_peek STATE_FOOD_X in
+            let food_y = mem_peek STATE_FOOD_Y in
+            let eating = (new_x == food_x) & (new_y == food_y) in
+            
+            // Add new head
+            queue_push new_x new_y;
+            fill_block new_x new_y;
+            
+            // If not eating, remove tail
+            if eating
+            then (
+                // Grow: don't remove tail
+                // Update score
+                let score = mem_peek STATE_SCORE in
+                mem_poke STATE_SCORE (score + 1);
+                
+                // Spawn new food
+                let (fx, fy) = spawn_food() in
+                mem_poke STATE_FOOD_X fx;
+                mem_poke STATE_FOOD_Y fy;
+                draw_food();
+                0
+            )
+            else (
+                // Remove tail
+                let (tail_x, tail_y) = queue_pop() in
+                clear_block tail_x tail_y;
+                0
+            )
+    )
+
+
+/* ============================================
+ * Food Management
+ * ============================================ */
+
+spawn_food(0) =
+    spawn_food_attempt 0
+
+spawn_food_attempt(tries) =
+    if tries > 100
+    then (15, 15)    // Give up, place at default
+    else (
+        let x = random_range SCREEN_BLOCKS in
+        let y = random_range SCREEN_BLOCKS in
+        
+        // Check if collides with snake
+        if collides_with_snake x y
+        then spawn_food_attempt (tries + 1)
+        else (x, y)
+    )
+
+draw_food(0) =
+    let x = mem_peek STATE_FOOD_X in
+    let y = mem_peek STATE_FOOD_Y in
+    draw_pattern_block x y APPLE_PATTERN_ADDR
+
+
+/* ============================================
+ * Rendering
+ * ============================================ */
+
+clear_screen(0) =
+    memset VIDEO_BASE 4096 0x0000
+
+draw_snake(0) =
+    draw_snake_segment 0
+
+draw_snake_segment(i) =
+    let len = queue_length() in
+    if i >= len
+    then 0
+    else (
+        let (x, y) = queue_get i in
+        fill_block x y;
+        draw_snake_segment (i + 1)
+    )
+
+show_game_over(0) =
+    // Draw "GAME OVER" message
+    // For simplicity, just flash the screen
+    clear_screen();
+    delay 500;
+    
+    // Draw score (simple representation)
+    let score = mem_peek STATE_SCORE in
+    draw_number score 12 15;
+    
+    // Wait for any key to restart
+    wait();
+    .main()    // Restart game (tail call)
+
+
+/* ============================================
+ * Utility Functions
+ * ============================================ */
+
+/* Simple delay loop */
+delay(n) =
+    if n > 0
+    then .delay (n - 1)
+    else 0
+
+/* Draw number (simple, single digit for now) */
+draw_number(num, bx, by) =
+    // Draw digit patterns (simplified)
+    if num == 0 then fill_block bx by
+    else if num == 1 then draw_block bx by 0x1818
+    else if num == 2 then draw_block bx by 0x7e42
+    else if num == 3 then draw_block bx by 0x4242
+    else draw_block bx by 0xffff
+
+
+/* ============================================
+ * Key Input
+ * ============================================ */
+
+try_read_key(default) =
+    let seq_before = mem_peek 0xc001 in
+    let seq_after = mem_peek 0xc001 in
+    if seq_before == seq_after
+    then default
+    else mem_peek 0xc000

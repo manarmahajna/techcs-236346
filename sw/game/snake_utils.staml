@@ -1,0 +1,203 @@
+/* Snake Game Utilities
+ * Drawing, FIFO queue, collision detection
+ */
+
+/* ============================================
+ * Constants
+ * ============================================ */
+
+VIDEO_BASE = 0xa000
+BLOCK_SIZE = 8
+SCREEN_BLOCKS = 32    // 256 / 8
+
+// Key codes
+KEY_LEFT = 0x4b
+KEY_UP = 0x48
+KEY_RIGHT = 0x4d
+KEY_DOWN = 0x50
+KEY_NONE = 0x2d
+
+// Directions
+DIR_UP = 0
+DIR_RIGHT = 1
+DIR_DOWN = 2
+DIR_LEFT = 3
+
+// Queue for snake body
+QUEUE_BASE = 0x2000
+QUEUE_MAX = 200       // Max snake length
+
+
+/* ============================================
+ * Block Drawing (8x8 pixels)
+ * ============================================ */
+
+/* Draw 8x8 block at block coordinates (bx, by) */
+draw_block(bx, by, pattern) =
+    draw_block_line bx by 0 pattern
+
+draw_block_line(bx, by, line, pattern) =
+    if line < 8
+    then (
+        mem_poke (VIDEO_BASE + (by*8 + line)*16 + bx) pattern;
+        draw_block_line bx by (line+1) pattern
+    )
+    else 0
+
+/* Clear 8x8 block */
+clear_block(bx, by) =
+    draw_block bx by 0x0000
+
+/* Draw filled block (white) */
+fill_block(bx, by) =
+    draw_block bx by 0xffff
+
+/* Draw block with specific 8x8 pattern (for apples!) */
+draw_pattern_block(bx, by, pattern_addr) =
+    draw_pattern_line bx by 0 pattern_addr
+
+draw_pattern_line(bx, by, line, pattern_addr) =
+    if line < 8
+    then (
+        let pattern = mem_peek (pattern_addr + line) in
+        mem_poke (VIDEO_BASE + (by*8 + line)*16 + bx) pattern;
+        draw_pattern_line bx by (line+1) pattern_addr
+    )
+    else 0
+
+
+/* ============================================
+ * FIFO Queue (Cyclic Buffer)
+ * ============================================ */
+
+/* Initialize queue */
+queue_init(0) =
+    mem_poke QUEUE_BASE 0;           // head = 0
+    mem_poke (QUEUE_BASE + 1) 0;     // tail = 0
+    mem_poke (QUEUE_BASE + 2) 0      // length = 0
+
+/* Push (x, y) to queue */
+queue_push(x, y) =
+    let head = mem_peek QUEUE_BASE in
+    let len = mem_peek (QUEUE_BASE + 2) in
+    // Store x, y at head position
+    mem_poke (QUEUE_BASE + 3 + head * 2) x;
+    mem_poke (QUEUE_BASE + 3 + head * 2 + 1) y;
+    // Update head and length
+    mem_poke QUEUE_BASE ((head + 1) & (QUEUE_MAX - 1));
+    mem_poke (QUEUE_BASE + 2) (len + 1)
+
+/* Pop from queue, returns (x, y) */
+queue_pop(0) =
+    let tail = mem_peek (QUEUE_BASE + 1) in
+    let len = mem_peek (QUEUE_BASE + 2) in
+    let x = mem_peek (QUEUE_BASE + 3 + tail * 2) in
+    let y = mem_peek (QUEUE_BASE + 3 + tail * 2 + 1) in
+    // Update tail and length
+    mem_poke (QUEUE_BASE + 1) ((tail + 1) & (QUEUE_MAX - 1));
+    mem_poke (QUEUE_BASE + 2) (len - 1);
+    (x, y)
+
+/* Get element at index (0 = head, length-1 = tail) */
+queue_get(index) =
+    let head = mem_peek QUEUE_BASE in
+    let len = mem_peek (QUEUE_BASE + 2) in
+    let pos = (head - 1 - index) & (QUEUE_MAX - 1) in
+    let x = mem_peek (QUEUE_BASE + 3 + pos * 2) in
+    let y = mem_peek (QUEUE_BASE + 3 + pos * 2 + 1) in
+    (x, y)
+
+/* Get queue length */
+queue_length(0) =
+    mem_peek (QUEUE_BASE + 2)
+
+/* Check if queue contains position */
+queue_contains(x, y, len, i) =
+    if i >= len
+    then 0
+    else (
+        let (qx, qy) = queue_get i in
+        if (qx == x) & (qy == y)
+        then 1
+        else queue_contains x y len (i+1)
+    )
+
+
+/* ============================================
+ * Collision Detection
+ * ============================================ */
+
+/* Check if position is out of bounds */
+out_of_bounds(x, y) =
+    (x < 0) | (x >= SCREEN_BLOCKS) | 
+    (y < 0) | (y >= SCREEN_BLOCKS)
+
+/* Check if position collides with snake body */
+collides_with_snake(x, y) =
+    let len = queue_length() in
+    queue_contains x y len 1    // Start from index 1 (skip head)
+
+
+/* ============================================
+ * Direction and Movement
+ * ============================================ */
+
+/* Update direction based on key (prevent reversal) */
+update_direction(current_dir, key) =
+    if key == KEY_UP & (current_dir != DIR_DOWN)
+    then DIR_UP
+    else if key == KEY_DOWN & (current_dir != DIR_UP)
+    then DIR_DOWN
+    else if key == KEY_LEFT & (current_dir != DIR_RIGHT)
+    then DIR_LEFT
+    else if key == KEY_RIGHT & (current_dir != DIR_LEFT)
+    then DIR_RIGHT
+    else current_dir
+
+/* Calculate new position based on direction (with wrap-around) */
+next_position(x, y, dir) =
+    let (new_x, new_y) = 
+        if dir == DIR_UP then (x, y - 1)
+        else if dir == DIR_DOWN then (x, y + 1)
+        else if dir == DIR_LEFT then (x - 1, y)
+        else (x + 1, y)    // DIR_RIGHT
+    in
+    wrap_position new_x new_y
+
+
+/* ============================================
+ * Random Number Generation (simple)
+ * ============================================ */
+
+/* Simple PRNG using linear congruential generator */
+RAND_SEED_ADDR = 0x1ff0
+
+random_init(seed) =
+    mem_poke RAND_SEED_ADDR seed
+
+random(0) =
+    let seed = mem_peek RAND_SEED_ADDR in
+    let next = (seed * 1103515245 + 12345) & 0x7fffffff in
+    mem_poke RAND_SEED_ADDR next;
+    next
+
+random_range(max) =
+    (random() & 0x7fff) mod max
+
+
+/* ============================================
+ * Apple Pattern (8x8)
+ * ============================================ */
+
+APPLE_PATTERN_ADDR = 0x1f00
+
+init_apple_pattern(0) =
+    // Realistic apple pattern (8x8)
+    mem_poke (APPLE_PATTERN_ADDR + 0) 0x1800;    //    ##
+    mem_poke (APPLE_PATTERN_ADDR + 1) 0x3c00;    //   ####
+    mem_poke (APPLE_PATTERN_ADDR + 2) 0x7e00;    //  ######
+    mem_poke (APPLE_PATTERN_ADDR + 3) 0xff00;    // ########
+    mem_poke (APPLE_PATTERN_ADDR + 4) 0xff00;    // ########
+    mem_poke (APPLE_PATTERN_ADDR + 5) 0x7e00;    //  ######
+    mem_poke (APPLE_PATTERN_ADDR + 6) 0x3c00;    //   ####
+    mem_poke (APPLE_PATTERN_ADDR + 7) 0x1800     //    ##

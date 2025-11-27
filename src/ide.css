@@ -1,0 +1,63 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Editor layout */
+
+.pane--editor {
+    display: flex;
+    flex-direction: column;
+}
+
+.pane--editor .tabs-component,
+.pane--editor .editor-container,
+.pane--editor .cm-editor {
+    height: 100%;
+}
+
+/* Device pane layout */
+
+.pane--device {
+    display: flex;
+    flex-direction: column;
+}
+
+.pane--device:focus {
+    outline: none;
+}
+
+.pane--device .log {
+    flex-basis: 0;
+    flex-grow: 1;
+    font-size: 10pt;
+    line-height: 12.5pt;
+    padding: 0.5em 0;
+    width: 1px;         /* make log stretch as wide as the canvas, but not more */
+    min-width: 100%;
+    overflow: auto;
+}
+
+.pane--device .log th.timestamp {
+    font-weight: 100;
+    font-size: 9pt;
+    line-height: 12.5pt;
+    font-family: times;
+    color: #666;
+}
+
+.pane--device .log .log--entry.phase {
+    color: #f55;
+}
+
+.pane--device .log .log--entry.error {
+    color: red;
+}
+
+.pane--device .log .log--entry.info {
+    color: #55f;
+}
