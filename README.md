@@ -243,4 +243,5 @@ project/
 
 ---
 
-*From simple adders to a verified computer system - one step at a time!* 🚀
+lana abu romi - 322836271
+manar mahagna - 211437397
