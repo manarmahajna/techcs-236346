@@ -243,5 +243,5 @@ project/
 
 ---
 
-lana abu romi - 322836271
-manar mahagna - 211437397
+Lana Abu Romi - 322836271
+Manar Mahagna - 211437397
