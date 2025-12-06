@@ -2,6 +2,8 @@
 
 **Course**: 236346 - Technion  
 **Project**: Building a Verified Computer System from Adders to Snake Game
+Lana Abu Romi - 322836271
+Manar Mahagna - 211437397
 
 ---
 
@@ -31,33 +33,7 @@ This project takes you on a journey from basic adders to a complete, formally ve
 
 ---
 
-## 🚀 **Quick Start**
 
-### Option 1: Interactive Exploration
-```bash
-# Phase 1: Adder Verification
-cd hw/arith
-jupyter lab verify_adder.ipynb
-
-# Phase 2: Transition Systems
-cd hw/base
-jupyter lab verify_transition_systems.ipynb
-
-# Phase 3: Assembly Programming
-cd hw/cpu/programs
-python3 test_programs.py
-```
-
-### Option 2: Command Line
-```bash
-# Verify k-bit adder
-cd hw/arith && python3 verify_adder.py
-
-# Test assembly programs
-cd hw/cpu/programs && python3 test_programs.py
-```
-
----
 
 ## 📚 **Documentation**
 
@@ -97,20 +73,7 @@ Control:  JMP, JZ, JNZ, RET
 
 ---
 
-## 🧪 **What's Verified**
 
-### Hardware (Phase 1-2)
-- ✅ **Adders**: k-bit parametric adder (1-32 bits)
-- ✅ **Counter**: 2-bit counter with wrap-around
-- ✅ **Memory Loop**: Increment with invariant preservation
-- ✅ **Stack Operations**: PUSH/POP specifications
-
-### Software (Phase 3)
-- ✅ **max.asm**: Find maximum in array (7 tests)
-- ✅ **find.asm**: Search for value (7 tests)
-- ✅ **Test Coverage**: 14/14 tests passing
-
----
 
 ## 💻 **Code Examples**
 
@@ -243,5 +206,4 @@ project/
 
 ---
 
-Lana Abu Romi - 322836271
-Manar Mahagna - 211437397
+
